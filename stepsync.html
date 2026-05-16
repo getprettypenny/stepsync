@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+  <meta name="theme-color" content="#0A0A10"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="StepSync"/>
+  <title>StepSync</title>
+  <link rel="manifest" href="#" id="manifest-link"/>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👟</text></svg>"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800;9..40,900&display=swap" rel="stylesheet"/>
+
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#0A0A10;
+      --card:rgba(255,255,255,0.045);
+      --border:rgba(255,255,255,0.07);
+      --muted:rgba(255,255,255,0.32);
+      --bill:#FF6B35;
+      --gina:#00C9A7;
+      --st:env(safe-area-inset-top,0px);
+      --sb:env(safe-area-inset-bottom,0px);
+    }
+    html,body{height:100%;background:var(--bg);color:#fff;font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+    #app{max-width:430px;margin:0 auto;min-height:100vh;padding-bottom:calc(80px + var(--sb))}
+
+    /* TAB BAR */
+    .tab-bar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:rgba(13,13,20,0.96);border-top:1px solid rgba(255,255,255,0.07);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);display:flex;padding-bottom:var(--sb);z-index:200}
+    .tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 0 7px;border:none;background:none;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent}
+    .tab-icon{font-size:19px;line-height:1}
+    .tab-label{font-size:9px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:rgba(255,255,255,0.28);transition:color .15s}
+    .tab-btn.active .tab-label{color:#fff}
+
+    /* PAGE HEADER */
+    .page-header{padding:calc(24px + var(--st)) 20px 14px;background:linear-gradient(180deg,rgba(13,13,20,.98) 0%,transparent 100%);position:sticky;top:0;z-index:100;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+    .app-wordmark{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:14px}
+    .user-toggle{display:flex;background:rgba(255,255,255,0.05);border-radius:14px;padding:3px;gap:3px}
+    .user-btn{flex:1;padding:9px 0;border-radius:11px;border:none;cursor:pointer;font-size:13px;font-weight:700;font-family:inherit;transition:all .2s;background:transparent;color:rgba(255,255,255,0.38)}
+    .user-btn.ab{background:var(--bill);color:#fff;box-shadow:0 4px 18px rgba(255,107,53,.38)}
+    .user-btn.ag{background:var(--gina);color:#fff;box-shadow:0 4px 18px rgba(0,201,167,.38)}
+
+    /* SYNC STATUS PILL */
+    .sync-pill{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:99px;font-size:10px;font-weight:700;letter-spacing:.5px;margin-bottom:12px}
+    .sync-pill.live{background:rgba(46,213,115,.12);color:#2ed573;border:1px solid rgba(46,213,115,.25)}
+    .sync-pill.offline{background:rgba(255,71,87,.1);color:#ff6b6b;border:1px solid rgba(255,71,87,.2)}
+    .sync-pill.connecting{background:rgba(255,255,255,.06);color:var(--muted);border:1px solid rgba(255,255,255,.1)}
+    .sync-dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+    .sync-dot.pulse{animation:pulse 1.5s infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+    /* UTILITIES */
+    .sec{padding:0 18px;margin-top:18px}
+    .sec-label{font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:10px;font-weight:700}
+    .card{background:var(--card);border-radius:20px;padding:18px;border:1px solid var(--border)}
+    input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.4)}
+    input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
+
+    /* HOME */
+    .home-hero{margin:0 18px;margin-top:18px;background:linear-gradient(135deg,rgba(255,107,53,.12) 0%,rgba(0,201,167,.12) 100%);border:1px solid rgba(255,255,255,0.08);border-radius:24px;padding:22px 20px}
+    .home-hero-title{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:16px}
+    .vs-row{display:flex;align-items:stretch;gap:10px}
+    .vs-user{flex:1;text-align:center}
+    .vs-name{font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:600}
+    .vs-steps{font-size:34px;font-weight:900;letter-spacing:-2px;line-height:1}
+    .vs-sub{font-size:11px;color:var(--muted);margin-top:4px}
+    .vs-divider{display:flex;align-items:center;padding:0 4px}
+    .vs-divider-text{font-size:11px;font-weight:800;color:rgba(255,255,255,0.2);letter-spacing:1px}
+    .week-bar-wrap{margin-top:18px}
+    .week-bar-label{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:6px}
+    .week-bar-track{height:8px;background:rgba(255,255,255,0.07);border-radius:99px;overflow:hidden;display:flex}
+    .week-bar-bill{height:100%;border-radius:99px 0 0 99px;transition:width .7s cubic-bezier(.4,0,.2,1)}
+    .week-bar-gina{height:100%;border-radius:0 99px 99px 0;transition:width .7s cubic-bezier(.4,0,.2,1)}
+    .leader-badge{margin-top:14px;text-align:center;font-size:13px;font-weight:700;padding:10px 16px;border-radius:12px}
+
+    /* GINA GOAL */
+    .gina-goal-card{margin:14px 18px 0;background:rgba(0,201,167,.08);border:1px solid rgba(0,201,167,.2);border-radius:20px;padding:18px}
+    .goal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+    .goal-title{font-size:12px;font-weight:700;color:var(--gina);letter-spacing:.5px}
+    .goal-badge{font-size:11px;font-weight:700;color:var(--gina);background:rgba(0,201,167,.15);padding:4px 10px;border-radius:99px}
+    .goal-steps{font-size:40px;font-weight:900;letter-spacing:-2px;color:var(--gina);line-height:1}
+    .goal-sub{font-size:12px;color:rgba(255,255,255,0.4);margin-top:4px}
+    .goal-track{height:8px;background:rgba(0,201,167,.12);border-radius:99px;overflow:hidden;margin-top:14px}
+    .goal-fill{height:100%;background:var(--gina);border-radius:99px;transition:width .7s cubic-bezier(.4,0,.2,1);box-shadow:0 0 12px rgba(0,201,167,.5)}
+    .goal-footnote{font-size:11px;color:rgba(255,255,255,0.28);margin-top:8px;text-align:right}
+
+    /* ALL-TIME ACCORDION */
+    .alltime-panel{margin:14px 18px 0;background:var(--card);border:1px solid var(--border);border-radius:20px;overflow:hidden}
+    .alltime-toggle{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+    .alltime-toggle-left{display:flex;align-items:center;gap:10px}
+    .alltime-icon{font-size:18px}
+    .alltime-title{font-size:13px;font-weight:700}
+    .alltime-sub{font-size:11px;color:var(--muted);margin-top:1px}
+    .alltime-chevron{font-size:16px;color:var(--muted);transition:transform .2s}
+    .alltime-chevron.open{transform:rotate(180deg)}
+    .alltime-body{display:none;padding:0 18px 18px;border-top:1px solid var(--border)}
+    .alltime-body.open{display:block}
+    .alltime-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.04)}
+    .alltime-row:last-child{border-bottom:none}
+    .alltime-user{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600}
+    .alltime-dot{width:8px;height:8px;border-radius:50%}
+    .alltime-val{text-align:right}
+    .alltime-big{font-size:18px;font-weight:800;letter-spacing:-.5px}
+    .alltime-small{font-size:11px;color:var(--muted);margin-top:1px}
+    .alltime-combined{margin-top:12px;padding:14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);border-radius:14px;text-align:center}
+    .alltime-combined-num{font-size:28px;font-weight:900;letter-spacing:-1.5px}
+    .alltime-combined-label{font-size:11px;color:var(--muted);margin-top:3px}
+
+    /* LOG */
+    .date-row{display:flex;gap:8px;margin-bottom:14px}
+    .date-input{flex:1;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:10px 13px;color:rgba(255,255,255,0.8);font-size:13px;font-family:inherit;outline:none}
+    .today-btn{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:10px 13px;color:rgba(255,255,255,0.5);font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;white-space:nowrap}
+    .big-steps{font-size:50px;font-weight:900;letter-spacing:-3px;line-height:1}
+    .big-label{font-size:11px;color:var(--muted);margin-top:3px;letter-spacing:.5px}
+    .log-goal-bar{margin-top:12px}
+    .log-goal-track{height:5px;background:rgba(0,201,167,.12);border-radius:99px;overflow:hidden}
+    .log-goal-fill{height:100%;background:var(--gina);border-radius:99px;transition:width .5s}
+    .log-goal-text{font-size:10px;color:rgba(0,201,167,.7);margin-top:5px}
+    .input-row{display:flex;gap:8px;margin-top:16px}
+    .step-input{flex:1;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:13px;padding:13px 15px;color:#fff;font-size:22px;font-weight:700;font-family:inherit;outline:none}
+    .step-input::placeholder{color:rgba(255,255,255,0.16)}
+    .save-btn{border:none;border-radius:13px;padding:13px 20px;color:#fff;font-weight:700;font-size:15px;cursor:pointer;font-family:inherit;transition:transform .1s}
+    .save-btn:active{transform:scale(.95)}
+    .saving-lbl{font-size:10px;color:var(--muted);text-align:right;margin-top:6px}
+
+    /* WEEK STRIP */
+    .week-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+    .nav-btn{background:rgba(255,255,255,0.07);border:none;border-radius:9px;width:30px;height:30px;color:rgba(255,255,255,0.6);cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center}
+    .nav-btn:disabled{opacity:.22;cursor:default}
+    .week-lbl{font-size:11px;font-weight:600;color:rgba(255,255,255,0.45)}
+    .day-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+    .day-cell{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:6px 2px;border-radius:11px;border:1px solid transparent;transition:all .15s;-webkit-tap-highlight-color:transparent}
+    .day-name{font-size:8px;font-weight:700;color:rgba(255,255,255,0.28);text-transform:uppercase}
+    .day-num{font-size:14px;font-weight:700;color:rgba(255,255,255,0.42)}
+    .day-cell.active .day-num{color:#fff}
+    .step-dot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,0.1)}
+    .step-mini{font-size:7px;font-weight:800}
+    .stats-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+    .stat-card{background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:13px;padding:13px;text-align:center}
+    .stat-num{font-size:21px;font-weight:800;letter-spacing:-1px}
+    .stat-lbl{font-size:10px;color:var(--muted);margin-top:2px}
+
+    /* HISTORY */
+    .seg-tabs{display:flex;background:rgba(255,255,255,0.05);border-radius:12px;padding:3px;gap:3px;margin-bottom:14px}
+    .seg-btn{flex:1;padding:8px 0;border-radius:9px;border:none;cursor:pointer;font-size:12px;font-weight:600;font-family:inherit;background:transparent;color:rgba(255,255,255,0.38);transition:all .15s}
+    .seg-btn.active{background:rgba(255,255,255,0.09);color:#fff}
+    .month-hdr{font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);padding:12px 0 7px}
+    .hist-row{display:flex;align-items:center;padding:11px 0;border-bottom:1px solid rgba(255,255,255,0.04)}
+    .hist-row:last-child{border-bottom:none}
+    .hist-day{font-size:11px;color:rgba(255,255,255,0.38);min-width:30px}
+    .hist-date{font-size:13px;font-weight:600;flex:1;padding:0 8px}
+    .hist-steps{font-size:15px;font-weight:800;letter-spacing:-.5px}
+    .hist-bar-wrap{width:48px;height:4px;background:rgba(255,255,255,0.07);border-radius:99px;margin-left:8px;overflow:hidden}
+    .hist-bar{height:100%;border-radius:99px}
+    .empty-hist{text-align:center;padding:40px 20px;color:var(--muted);font-size:13px;line-height:2}
+    .empty-hist span{display:block;font-size:32px;margin-bottom:10px}
+
+    /* TOAST */
+    .toast{position:fixed;bottom:calc(70px + var(--sb));left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:99px;font-size:13px;font-weight:700;z-index:300;white-space:nowrap;box-shadow:0 8px 28px rgba(0,0,0,.5);animation:fadeUp .22s ease;pointer-events:none}
+    .toast.success{background:#2ed573;color:#0A0A10}
+    .toast.error{background:#FF4757;color:#fff}
+    @keyframes fadeUp{from{opacity:0;transform:translateX(-50%) translateY(8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+    /* INSTALL */
+    .install-bar{margin:8px 18px 0;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:12px 14px;display:flex;align-items:center;gap:10px}
+    .install-txt{flex:1;font-size:11px;color:rgba(255,255,255,0.42);line-height:1.4}
+    .install-txt strong{color:rgba(255,255,255,0.72);display:block;font-size:12px;margin-bottom:1px}
+    .install-btn2{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:9px;padding:7px 12px;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit}
+    .dismiss-btn{background:none;border:none;color:rgba(255,255,255,0.28);cursor:pointer;font-size:17px}
+
+    /* CONFIG MISSING SCREEN */
+    .config-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:40px 28px;text-align:center}
+    .config-screen h1{font-size:24px;font-weight:900;margin-bottom:10px}
+    .config-screen p{font-size:14px;color:var(--muted);line-height:1.7;margin-bottom:20px}
+    .config-code{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:14px 16px;font-family:monospace;font-size:12px;color:rgba(255,255,255,.7);text-align:left;width:100%;line-height:1.8;word-break:break-all}
+  </style>
+</head>
+<body>
+<div id="app">
+  <div style="display:flex;align-items:center;justify-content:center;height:100vh;color:rgba(255,255,255,.3);font-size:13px;letter-spacing:2px">Connecting…</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     FIREBASE CONFIG
+     Replace the placeholder values below with your Firebase project config.
+     See SETUP.md for step-by-step instructions.
+     ════════════════════════════════════════════════════════════════════════ -->
+<script type="module">
+import { initializeApp }          from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, setDoc, onSnapshot }
+                                  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+// ┌─────────────────────────────────────────────────────────────────────────┐
+// │  PASTE YOUR FIREBASE CONFIG HERE  (replace every "REPLACE_ME" value)   │
+// └─────────────────────────────────────────────────────────────────────────┘
+const firebaseConfig = {
+  apiKey:            "AIzaSyCHxUqCEkLC129NvkzxX4dMkTO0JjUl7wM",
+  authDomain:        "stepsync-billgina.firebaseapp.com",
+  projectId:         "stepsync-billgina",
+  storageBucket:     "stepsync-billgina.firebasestorage.app",
+  messagingSenderId: "677236243269",
+  appId:             "1:677236243269:web:8748c65ef9d8e128d7dc2c",
+  measurementId: "G-XT3EPM032F"
+};
+// ─────────────────────────────────────────────────────────────────────────────
+
+const CONFIG_READY = !Object.values(firebaseConfig).includes("REPLACE_ME");
+
+if (!CONFIG_READY) {
+  document.getElementById('app').innerHTML = `
+    <div class="config-screen">
+      <div style="font-size:48px;margin-bottom:16px">🔧</div>
+      <h1>One more step!</h1>
+      <p>Open <strong>stepsync.html</strong> in a text editor and replace the Firebase config values. See <strong>SETUP.md</strong> for exact instructions.</p>
+      <div class="config-code">apiKey: "REPLACE_ME"<br>authDomain: "REPLACE_ME"<br>projectId: "REPLACE_ME"<br>storageBucket: "REPLACE_ME"<br>messagingSenderId: "REPLACE_ME"<br>appId: "REPLACE_ME"</div>
+    </div>`;
+} else {
+  // ── Firebase init ──────────────────────────────────────────────────────────
+  const fbApp  = initializeApp(firebaseConfig);
+  const db     = getFirestore(fbApp);
+  const docRef = doc(db, "stepsync", "shared");
+
+  // ── Manifest ───────────────────────────────────────────────────────────────
+  const mf={name:"StepSync – Bill & Gina",short_name:"StepSync",start_url:"./",display:"standalone",background_color:"#0A0A10",theme_color:"#0A0A10",orientation:"portrait",icons:[{src:"data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='80' fill='%230A0A10'/><text y='400' x='56' font-size='400'>&#x1F45F;</text></svg>",sizes:"512x512",type:"image/svg+xml",purpose:"any maskable"}]};
+  document.getElementById('manifest-link').href=URL.createObjectURL(new Blob([JSON.stringify(mf)],{type:'application/json'}));
+
+  // ── SW ─────────────────────────────────────────────────────────────────────
+  if('serviceWorker' in navigator){const s=`const C='ss-v5';self.addEventListener('install',e=>e.waitUntil(caches.open(C).then(c=>c.add('/'))));self.addEventListener('fetch',e=>e.respondWith(fetch(e.request).catch(()=>caches.match(e.request))));`;navigator.serviceWorker.register(URL.createObjectURL(new Blob([s],{type:'application/javascript'}))).catch(()=>{})}
+
+  // ── Config ─────────────────────────────────────────────────────────────────
+  const USERS=[
+    {id:'user1',name:'Bill', color:'#FF6B35',emoji:'🔥',goal:null},
+    {id:'user2',name:'Gina', color:'#00C9A7',emoji:'⚡',goal:10000},
+  ];
+  const DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  // ── State ──────────────────────────────────────────────────────────────────
+  let S={
+    tab:'home', histTab:'bill', activeUser:'user1',
+    steps:{},
+    selectedDate:today(), currentWeek:weekKey(today()),
+    allTimeOpen:false,
+    syncStatus:'connecting', // 'connecting' | 'live' | 'offline'
+    saving:false,
+    toastTimer:null,
+    deferredInstall:null, showInstall:false,
+  };
+
+  // ── Date utils ─────────────────────────────────────────────────────────────
+  function today(){const d=new Date();d.setHours(12,0,0,0);return d;}
+  function pad(n){return String(n).padStart(2,'0');}
+  function fmt(d){return `${MONTHS[d.getMonth()]} ${d.getDate()}`;}
+  function weekKey(date){const d=new Date(date);d.setHours(0,0,0,0);d.setDate(d.getDate()-d.getDay());return `wk_${d.getFullYear()}_${pad(d.getMonth()+1)}_${pad(d.getDate())}`;}
+  function weekDates(wk){const[y,m,dd]=wk.replace('wk_','').split('_');const s=new Date(+y,+m-1,+dd);return Array.from({length:7},(_,i)=>{const d=new Date(s);d.setDate(d.getDate()+i);return d;});}
+  function dateKey(date){return `${date.getFullYear()}_${pad(date.getMonth()+1)}_${pad(date.getDate())}`;}
+  function dateFromKey(dk){const[y,m,d]=dk.split('_');return new Date(+y,+m-1,+d,12);}
+
+  // ── Data utils ─────────────────────────────────────────────────────────────
+  function getDaySteps(uid,dk,wk){return S.steps[uid]?.[wk]?.[dk]||0;}
+  function getWeekTotal(uid,wk){return Object.values(S.steps[uid]?.[wk]||{}).reduce((a,b)=>a+b,0);}
+  function getAllDays(uid){const days=[];for(const[wk,wkd]of Object.entries(S.steps[uid]||{}))for(const[dk,steps]of Object.entries(wkd))if(steps>0)days.push({dk,wk,steps,date:dateFromKey(dk)});return days.sort((a,b)=>b.date-a.date);}
+  function getAllTimeTotal(uid){return getAllDays(uid).reduce((s,d)=>s+d.steps,0);}
+  function getMaxSteps(uid){return getAllDays(uid).reduce((m,d)=>Math.max(m,d.steps),1);}
+
+  // ── Firestore real-time listener ───────────────────────────────────────────
+  onSnapshot(docRef,
+    (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        S.steps = data.steps || {};
+      }
+      S.syncStatus = 'live';
+      render();
+    },
+    (err) => {
+      console.error('Firestore error:', err);
+      S.syncStatus = 'offline';
+      render();
+    }
+  );
+
+  // ── Save to Firestore ──────────────────────────────────────────────────────
+  async function saveData() {
+    try {
+      await setDoc(docRef, { steps: S.steps }, { merge: true });
+      S.syncStatus = 'live';
+    } catch(e) {
+      S.syncStatus = 'offline';
+      showToast('Sync failed – check connection', 'error');
+    }
+    S.saving = false;
+    render();
+  }
+
+  // ── Actions ────────────────────────────────────────────────────────────────
+  window.setTab=t=>{S.tab=t;render();};
+  window.setHistTab=t=>{S.histTab=t;render();};
+  window.setUser=id=>{S.activeUser=id;render();};
+  window.setDate=s=>{S.selectedDate=new Date(s+'T12:00:00');S.currentWeek=weekKey(S.selectedDate);render();};
+  window.setToday=()=>{S.selectedDate=today();S.currentWeek=weekKey(today());render();};
+  window.selectDay=ts=>{S.selectedDate=new Date(ts);S.currentWeek=weekKey(new Date(ts));render();};
+  window.prevWeek=()=>{const d=weekDates(S.currentWeek)[0];d.setDate(d.getDate()-1);S.currentWeek=weekKey(d);render();};
+  window.nextWeek=()=>{const d=weekDates(S.currentWeek)[6];d.setDate(d.getDate()+1);const nk=weekKey(d);if(nk<=weekKey(today())){S.currentWeek=nk;render();}};
+  window.toggleAllTime=()=>{S.allTimeOpen=!S.allTimeOpen;render();};
+  window.triggerInstall=()=>{if(!S.deferredInstall)return;S.deferredInstall.prompt();S.deferredInstall.userChoice.then(()=>{S.deferredInstall=null;S.showInstall=false;render();});};
+  window.dismissInstall=()=>{S.showInstall=false;render();};
+
+  window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();S.deferredInstall=e;S.showInstall=true;render();});
+
+  window.logSteps=()=>{
+    const inp=document.getElementById('step-input');
+    const val=parseInt(inp.value);
+    if(isNaN(val)||val<0||val>999999){showToast('Enter a valid number (0–999,999)','error');return;}
+    const wk=weekKey(S.selectedDate),dk=dateKey(S.selectedDate);
+    if(!S.steps[S.activeUser])S.steps[S.activeUser]={};
+    if(!S.steps[S.activeUser][wk])S.steps[S.activeUser][wk]={};
+    S.steps[S.activeUser][wk][dk]=val;
+    S.saving=true;inp.value='';render();saveData();
+    showToast(`${val.toLocaleString()} steps saved!`);
+  };
+
+  function showToast(msg,type='success'){
+    clearTimeout(S.toastTimer);const ex=document.getElementById('toast');if(ex)ex.remove();
+    const el=document.createElement('div');el.id='toast';el.className=`toast ${type}`;el.textContent=msg;
+    document.body.appendChild(el);S.toastTimer=setTimeout(()=>el.remove(),2500);
+  }
+
+  // ── Render blocks ──────────────────────────────────────────────────────────
+  function syncPill(){
+    const cfg={
+      live:      {cls:'live',      dot:'',      label:'Live sync'},
+      offline:   {cls:'offline',   dot:'',      label:'Offline'},
+      connecting:{cls:'connecting',dot:' pulse',label:'Connecting…'},
+    }[S.syncStatus];
+    return `<div class="sync-pill ${cfg.cls}"><div class="sync-dot${cfg.dot}"></div>${cfg.label}</div>`;
+  }
+
+  function renderHeader(){
+    const showToggle=S.tab!=='home';
+    return `<div class="page-header">
+      <div class="app-wordmark">👟 StepSync</div>
+      ${syncPill()}
+      ${showToggle?`<div class="user-toggle">
+        ${USERS.map(u=>`<button class="user-btn${S.activeUser===u.id?` a${u.name[0].toLowerCase()}`:''}" onclick="setUser('${u.id}')">${u.emoji} ${u.name}</button>`).join('')}
+      </div>`:''}
+    </div>`;
+  }
+
+  function renderTabBar(){
+    return `<div class="tab-bar">${[
+      {id:'home',icon:'🏠',label:'Home'},
+      {id:'log', icon:'✏️', label:'Log'},
+      {id:'history',icon:'📋',label:'History'},
+    ].map(t=>`<button class="tab-btn${S.tab===t.id?' active':''}" onclick="setTab('${t.id}')">
+        <span class="tab-icon">${t.icon}</span>
+        <span class="tab-label">${t.label}</span>
+      </button>`).join('')}</div>`;
+  }
+
+  function renderHome(){
+    const wk=weekKey(today());
+    const billWk=getWeekTotal('user1',wk), ginaWk=getWeekTotal('user2',wk);
+    const totalWk=billWk+ginaWk||1;
+    const billPct=Math.round((billWk/totalWk)*100), ginaPct=100-billPct;
+    const winner=billWk>ginaWk?USERS[0]:ginaWk>billWk?USERS[1]:null;
+    const ginaToday=getDaySteps('user2',dateKey(today()),wk);
+    const ginaGoal=USERS[1].goal;
+    const ginaGoalPct=Math.min(Math.round((ginaToday/ginaGoal)*100),100);
+    const billAll=getAllTimeTotal('user1'), ginaAll=getAllTimeTotal('user2');
+    const combined=billAll+ginaAll;
+    const allMax=Math.max(billAll,ginaAll,1);
+    const billDays=getAllDays('user1').length, ginaDays=getAllDays('user2').length;
+
+    return `
+      <div class="home-hero">
+        <div class="home-hero-title">This Week &middot; Head-to-Head</div>
+        <div class="vs-row">
+          <div class="vs-user">
+            <div class="vs-name" style="color:var(--bill)">🔥 Bill</div>
+            <div class="vs-steps" style="color:var(--bill)">${billWk.toLocaleString()}</div>
+            <div class="vs-sub">${Math.round(billWk/7).toLocaleString()} avg/day</div>
+          </div>
+          <div class="vs-divider"><div class="vs-divider-text">VS</div></div>
+          <div class="vs-user">
+            <div class="vs-name" style="color:var(--gina)">⚡ Gina</div>
+            <div class="vs-steps" style="color:var(--gina)">${ginaWk.toLocaleString()}</div>
+            <div class="vs-sub">${Math.round(ginaWk/7).toLocaleString()} avg/day</div>
+          </div>
+        </div>
+        ${(billWk+ginaWk)>0?`
+        <div class="week-bar-wrap">
+          <div class="week-bar-label">
+            <span style="color:var(--bill)">${billPct}%</span>
+            <span style="font-size:10px;color:rgba(255,255,255,.2)">${(billWk+ginaWk).toLocaleString()} combined</span>
+            <span style="color:var(--gina)">${ginaPct}%</span>
+          </div>
+          <div class="week-bar-track">
+            <div class="week-bar-bill" style="width:${billPct}%;background:var(--bill)"></div>
+            <div class="week-bar-gina" style="width:${ginaPct}%;background:var(--gina)"></div>
+          </div>
+        </div>
+        <div class="leader-badge" style="${winner
+          ?`background:${winner.color}18;border:1px solid ${winner.color}30;color:${winner.color}`
+          :'background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);color:rgba(255,255,255,.4)'}">
+          ${winner?`${winner.emoji} ${winner.name} leads by ${Math.abs(billWk-ginaWk).toLocaleString()} steps`:'🤝 Tied this week!'}
+        </div>`:`<div style="text-align:center;padding:14px 0 2px;font-size:12px;color:var(--muted)">No steps logged yet this week</div>`}
+      </div>
+
+      <div class="gina-goal-card">
+        <div class="goal-header">
+          <div class="goal-title">⚡ Gina's Daily Goal</div>
+          <div class="goal-badge">${ginaGoal.toLocaleString()} steps</div>
+        </div>
+        <div class="goal-steps">${ginaToday.toLocaleString()}</div>
+        <div class="goal-sub">${ginaGoalPct>=100?'🎉 Goal reached today!':(ginaGoal-ginaToday).toLocaleString()+' steps to go today'}</div>
+        <div class="goal-track"><div class="goal-fill" style="width:${ginaGoalPct}%"></div></div>
+        <div class="goal-footnote">${ginaGoalPct}% of today's goal</div>
+      </div>
+
+      <div class="alltime-panel">
+        <div class="alltime-toggle" onclick="toggleAllTime()">
+          <div class="alltime-toggle-left">
+            <span class="alltime-icon">📊</span>
+            <div>
+              <div class="alltime-title">All-Time Totals</div>
+              <div class="alltime-sub">${combined>0?combined.toLocaleString()+' combined steps ever':'Tap to see lifetime stats'}</div>
+            </div>
+          </div>
+          <span class="alltime-chevron${S.allTimeOpen?' open':''}">&#8964;</span>
+        </div>
+        <div class="alltime-body${S.allTimeOpen?' open':''}">
+          <div class="alltime-row">
+            <div class="alltime-user"><div class="alltime-dot" style="background:var(--bill)"></div>Bill</div>
+            <div class="alltime-val">
+              <div class="alltime-big" style="color:var(--bill)">${billAll.toLocaleString()}</div>
+              <div class="alltime-small">${billDays} day${billDays!==1?'s':''} logged</div>
+            </div>
+          </div>
+          <div style="height:5px;background:rgba(255,107,53,.1);border-radius:99px;overflow:hidden;margin:2px 0 10px">
+            <div style="height:100%;width:${Math.round((billAll/allMax)*100)}%;background:var(--bill);border-radius:99px"></div>
+          </div>
+          <div class="alltime-row">
+            <div class="alltime-user"><div class="alltime-dot" style="background:var(--gina)"></div>Gina</div>
+            <div class="alltime-val">
+              <div class="alltime-big" style="color:var(--gina)">${ginaAll.toLocaleString()}</div>
+              <div class="alltime-small">${ginaDays} day${ginaDays!==1?'s':''} logged</div>
+            </div>
+          </div>
+          <div style="height:5px;background:rgba(0,201,167,.1);border-radius:99px;overflow:hidden;margin:2px 0 0">
+            <div style="height:100%;width:${Math.round((ginaAll/allMax)*100)}%;background:var(--gina);border-radius:99px"></div>
+          </div>
+          <div class="alltime-combined">
+            <div class="alltime-combined-num">${combined.toLocaleString()}</div>
+            <div class="alltime-combined-label">total steps combined since day one</div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function renderLog(){
+    const user=USERS.find(u=>u.id===S.activeUser);
+    const selDk=dateKey(S.selectedDate),selWk=weekKey(S.selectedDate);
+    const daySteps=getDaySteps(S.activeUser,selDk,selWk);
+    const weekTotal=getWeekTotal(S.activeUser,S.currentWeek);
+    const weekAvg=Math.round(weekTotal/7);
+    const isNow=S.currentWeek===weekKey(today());
+    const todayStr=today().toISOString().split('T')[0];
+    const wDates=weekDates(S.currentWeek);
+    const showGoal=user.goal!=null;
+    const goalPct=showGoal?Math.min(Math.round((daySteps/user.goal)*100),100):0;
+    const goalRem=showGoal?Math.max(user.goal-daySteps,0):0;
+
+    return `
+      <div class="sec">
+        <div class="sec-label">Log Steps</div>
+        <div class="card">
+          <div class="date-row">
+            <input type="date" class="date-input"
+              value="${S.selectedDate.toISOString().split('T')[0]}"
+              max="${todayStr}" onchange="setDate(this.value)"/>
+            <button class="today-btn" onclick="setToday()">Today</button>
+          </div>
+          <div class="big-steps" style="color:${user.color}">${daySteps.toLocaleString()}</div>
+          <div class="big-label">${user.emoji} ${user.name} &middot; ${DAYS[S.selectedDate.getDay()]}, ${fmt(S.selectedDate)}</div>
+          ${showGoal?`<div class="log-goal-bar">
+            <div class="log-goal-track"><div class="log-goal-fill" style="width:${goalPct}%"></div></div>
+            <div class="log-goal-text">${goalPct>=100?'🎉 Daily goal reached!':goalRem.toLocaleString()+' steps to today\'s 10,000 goal'}</div>
+          </div>`:''}
+          <div class="input-row">
+            <input id="step-input" type="number" inputmode="numeric"
+              placeholder="Enter steps…" class="step-input"
+              onkeydown="if(event.key==='Enter')logSteps()"/>
+            <button class="save-btn"
+              style="background:${user.color};box-shadow:0 4px 18px ${user.color}44"
+              onclick="logSteps()">Save</button>
+          </div>
+          ${S.saving?'<div class="saving-lbl">Syncing…</div>':''}
+        </div>
+      </div>
+
+      <div class="sec" style="margin-top:22px">
+        <div class="week-nav">
+          <div class="sec-label" style="margin-bottom:0">This Week</div>
+          <div style="display:flex;gap:5px;align-items:center">
+            <button class="nav-btn" onclick="prevWeek()">&#8249;</button>
+            <span class="week-lbl">${fmt(wDates[0])} &ndash; ${fmt(wDates[6])}</span>
+            <button class="nav-btn" onclick="nextWeek()" ${isNow?'disabled':''}>&#8250;</button>
+          </div>
+        </div>
+        <div class="card" style="margin-top:10px">
+          <div class="day-grid">
+            ${wDates.map(date=>{
+              const dk=dateKey(date),wk=weekKey(date);
+              const ds=getDaySteps(S.activeUser,dk,wk);
+              const isActive=dk===dateKey(S.selectedDate);
+              const mini=ds>=1000?`${(ds/1000).toFixed(1)}k`:ds>0?ds:'';
+              return `<div class="day-cell${isActive?' active':''}"
+                style="${isActive?`background:${user.color}1e;border-color:${user.color}50`:''}"
+                onclick="selectDay(${date.getTime()})">
+                <div class="day-name">${DAYS[date.getDay()]}</div>
+                <div class="day-num">${date.getDate()}</div>
+                <div class="step-dot" style="background:${ds>0?user.color+'88':'rgba(255,255,255,.1)'}"></div>
+                ${mini?`<div class="step-mini" style="color:${user.color}">${mini}</div>`:'<div style="height:10px"></div>'}
+              </div>`;
+            }).join('')}
+          </div>
+          <div class="stats-row">
+            <div class="stat-card">
+              <div class="stat-num" style="color:${user.color}">${weekTotal.toLocaleString()}</div>
+              <div class="stat-lbl">Week Total</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-num" style="color:${user.color}">${weekAvg.toLocaleString()}</div>
+              <div class="stat-lbl">Daily Avg</div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function renderHistory(){
+    const showBill=S.histTab!=='gina', showGina=S.histTab!=='bill';
+    let entries=[];
+    if(showBill)getAllDays('user1').forEach(e=>entries.push({...e,uid:'user1'}));
+    if(showGina)getAllDays('user2').forEach(e=>entries.push({...e,uid:'user2'}));
+    entries.sort((a,b)=>b.date-a.date);
+    const groups={};
+    entries.forEach(e=>{const mk=`${e.date.getFullYear()}_${e.date.getMonth()}`;if(!groups[mk])groups[mk]={label:`${MONTHS[e.date.getMonth()]} ${e.date.getFullYear()}`,entries:[]};groups[mk].entries.push(e);});
+    const maxB=getMaxSteps('user1'),maxG=getMaxSteps('user2');
+    const isBoth=showBill&&showGina;
+    const inner=Object.keys(groups).length===0
+      ?`<div class="empty-hist"><span>📋</span>No steps logged yet.<br>Head to Log to get started!</div>`
+      :Object.values(groups).map(g=>`
+        <div class="month-hdr">${g.label}</div>
+        ${g.entries.map(e=>{
+          const user=USERS.find(u=>u.id===e.uid);
+          const barW=Math.round((e.steps/(e.uid==='user1'?maxB:maxG))*100);
+          return `<div class="hist-row">
+            <div class="hist-day">${DAYS[e.date.getDay()].slice(0,3)}</div>
+            <div class="hist-date">${fmt(e.date)}${isBoth?`<span style="font-size:10px;color:${user.color};margin-left:6px;font-weight:800">${user.emoji}</span>`:''}</div>
+            <div class="hist-steps" style="color:${user.color}">${e.steps.toLocaleString()}</div>
+            <div class="hist-bar-wrap"><div class="hist-bar" style="width:${barW}%;background:${user.color}66"></div></div>
+          </div>`;
+        }).join('')}`).join('');
+
+    return `<div class="sec" style="margin-top:16px">
+      <div class="sec-label">Step History</div>
+      <div class="seg-tabs">
+        <button class="seg-btn${S.histTab==='bill'?' active':''}" onclick="setHistTab('bill')">🔥 Bill</button>
+        <button class="seg-btn${S.histTab==='gina'?' active':''}" onclick="setHistTab('gina')">⚡ Gina</button>
+        <button class="seg-btn${S.histTab==='both'?' active':''}" onclick="setHistTab('both')">Both</button>
+      </div>
+      <div class="card">${inner}</div>
+    </div>`;
+  }
+
+  function render(){
+    const body=S.tab==='home'?renderHome():S.tab==='log'?renderLog():renderHistory();
+    document.getElementById('app').innerHTML=`
+      ${renderHeader()}
+      ${S.showInstall?`<div class="install-bar">
+        <div class="install-txt"><strong>Install StepSync</strong>Add to home screen for the full app</div>
+        <button class="install-btn2" onclick="triggerInstall()">Install</button>
+        <button class="dismiss-btn" onclick="dismissInstall()">&#10005;</button>
+      </div>`:''}
+      ${body}
+      ${renderTabBar()}`;
+  }
+
+  // Initial render while waiting for Firestore
+  render();
+}
+</script>
+</body>
+</html>
